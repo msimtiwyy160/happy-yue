@@ -27,12 +27,30 @@
   ];
   const personalities=['亲人','好奇','慵懒','贪吃','害羞'];
   const safeName=n=>typeof n==='string'?n.trim().slice(0,16):'';
+  const roomNames={yard:'小院',bedroom:'卧室',kitchen:'厨房',catroom:'猫窝房'};
+  function ensureLocation(c,now=Date.now(),rng=Math.random){
+    const old=c.location||{};
+    c.location={room:c.status==='visitor'?'yard':roomNames[old.room]?old.room:'yard',x:Number.isFinite(old.x)?Math.max(.12,Math.min(.88,old.x)):.2+rng()*.6,y:Number.isFinite(old.y)?Math.max(.6,Math.min(.8,old.y)):.66+rng()*.08,changedAt:Number.isFinite(old.changedAt)?old.changedAt:now,nextMove:Number.isFinite(old.nextMove)?old.nextMove:now+90000+rng()*90000};
+    return c.location;
+  }
+  function moveCat(s,id,destination,now=Date.now(),rng=Math.random){
+    const c=s.cats.find(c=>c.id===id);if(!c||!roomNames[destination]||(c.status==='visitor'&&destination!=='yard'))return false;
+    c.location={room:destination,x:.2+rng()*.6,y:(destination==='bedroom'?.72:.65)+rng()*.05,changedAt:now,nextMove:now+90000+rng()*90000};return true;
+  }
+  function wanderLocations(s,now=Date.now(),rng=Math.random){
+    let moved=0;for(const c of s.cats){const l=ensureLocation(c,now,rng);if(c.status==='visitor'||now<l.nextMove)continue;
+      const choices=Object.keys(roomNames).filter(r=>r!==l.room);
+      moveCat(s,c.id,choices[Math.floor(rng()*choices.length)%choices.length],now,rng);moved++;
+    }return moved;
+  }
+  function catsInRoom(s,room){return s.cats.filter(c=>c.location?.room===room);}
   function cat(coat='orange',name='小橘',status='visitor',pattern='stripe',accessory='none') {
     const c=coats.find(c=>c.id===coat)||coats[0];
     return {id:'cat-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),name:safeName(name)||'小猫',coat:c.id,breed:c.breed,pattern,accessory,status,trust:status==='visitor'?10:100,affection:0,personality:personalities[Math.floor(Math.random()*5)],favorite:items[Math.floor(Math.random()*items.length)].tag,lastInteraction:0};
   }
   function newGame(options={},now=Date.now()) {
-    return {version:1,lastSeen:now,coins:45,gifts:0,cats:[cat(options.coat,safeName(options.name)||'小橘','starter',options.pattern||'stripe',options.accessory||'none')],owned:['bowl','box'],placed:['bowl','box'],memories:[{text:'把第一只小猫接回了家。小院的故事，从这里开始。',at:now}],nextVisitor:now+10*60000};
+    const starter=cat(options.coat,safeName(options.name)||'小橘','starter',options.pattern||'stripe',options.accessory||'none');ensureLocation(starter,now);
+    return {version:1,lastSeen:now,coins:45,gifts:0,cats:[starter],owned:['bowl','box'],placed:['bowl','box'],memories:[{text:'把第一只小猫接回了家。小院的故事，从这里开始。',at:now}],nextVisitor:now+10*60000};
   }
   function memory(s,text,now=Date.now()) {s.memories.unshift({text,at:now});s.memories=s.memories.slice(0,100);}
   function normalize(raw,now=Date.now()) {
@@ -40,6 +58,7 @@
     const s={...raw};
     s.cats=raw.cats.filter(c=>c&&typeof c.id==='string').slice(0,100).map(c=>({...c,name:safeName(c.name)||'小猫',coat:coats.some(x=>x.id===c.coat)?c.coat:'orange',pattern:['stripe','solid','patch'].includes(c.pattern)?c.pattern:'solid',accessory:['none','scarf','bow'].includes(c.accessory)?c.accessory:'none',status:['starter','resident','visitor'].includes(c.status)?c.status:'visitor',trust:Math.max(0,Math.min(100,Number(c.trust)||0)),affection:Math.max(0,Number(c.affection)||0),lastInteraction:Number(c.lastInteraction)||0}));
     if(!s.cats.length) throw Error('存档没有猫咪');
+    s.cats=s.cats.filter((c,i,all)=>all.findIndex(x=>x.id===c.id)===i);s.cats.forEach(c=>ensureLocation(c,now));
     s.coins=Math.max(0,Number(s.coins)||0);s.gifts=Math.max(0,Number(s.gifts)||0);
     s.lastSeen=Number.isFinite(s.lastSeen)?s.lastSeen:now;
     s.nextVisitor=Number.isFinite(s.nextVisitor)?s.nextVisitor:now+10*60000;
@@ -56,6 +75,7 @@
     if(unused.length){const coat=unused[Math.floor(rng()*unused.length)%unused.length];c.coat=coat.id;c.breed=coat.breed;}
     else {const patterns=['solid','stripe','patch'];for(const coat of coats){const free=patterns.find(p=>!s.cats.some(existing=>existing.coat===coat.id&&existing.pattern===p));if(free){c.coat=coat.id;c.breed=coat.breed;c.pattern=free;break;}}}
     c.favorite=tags[Math.floor(rng()*tags.length)]||'food';
+    ensureLocation(c,now,rng);
     s.cats.push(c);memory(s,`一只${coats.find(x=>x.id===c.coat).name}小猫悄悄来到小院，暂时叫它「${c.name}」吧。`,now);return c;
   }
   function settle(s,now=Date.now(),rng=Math.random) {
@@ -66,7 +86,7 @@
     s.gifts+=gifts;
     let visits=0;
     if(now>=s.nextVisitor&&s.cats.filter(c=>c.status==='visitor').length<3&&s.placed.length){addVisitor(s,now,rng);visits++;s.nextVisitor=now+30*60000;}
-    s.lastSeen=now;return {elapsed,gifts,visits};
+    const moved=wanderLocations(s,now,rng);s.lastSeen=now;return {elapsed,gifts,visits,moved};
   }
   function interact(s,id,action,now=Date.now()) {
     const c=s.cats.find(c=>c.id===id);if(!c)return {ok:false,text:'这只小猫还没来到院子。'};
@@ -78,7 +98,7 @@
   }
   function adopt(s,id,name,now=Date.now()) {const c=s.cats.find(c=>c.id===id);if(!c||c.status!=='visitor'||c.trust<100)return false;c.name=safeName(name)||c.name;c.status='resident';memory(s,`「${c.name}」成为了小院的一员。从今天起，这里也是它的家。`,now);return true;}
   function buy(s,id) {const item=items.find(i=>i.id===id);if(!item||s.owned.includes(id)||s.coins<item.price)return false;s.coins-=item.price;s.owned.push(id);s.placed.push(id);memory(s,`为小院添了${item.name}，猫咪们围过来好奇地闻了闻。`);return true;}
-  const api={coats,items,safeName,cat,newGame,normalize,settle,interact,adopt,buy,memory,addVisitor};
+  const api={coats,items,safeName,cat,newGame,normalize,settle,interact,adopt,buy,memory,addVisitor,roomNames,ensureLocation,moveCat,wanderLocations,catsInRoom};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CatGame=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
 

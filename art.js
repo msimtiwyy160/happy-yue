@@ -11,6 +11,7 @@
   }
   function cell(width,height,index,columns=4,rows=4){const i=loop(index,columns*rows);return {x:i%columns*width/columns,y:Math.floor(i/columns)*height/rows,w:width/columns,h:height/rows};}
   function roomCell(width,height,room){return cell(width,height,({yard:0,bedroom:1,kitchen:2,catroom:3})[room]??0,2,2);}
+  function latestRoomArt(artwork,room){return room==='balcony'||room==='living'?(artwork[room]||null):(artwork.rooms||null);}
   function kind(breed){return breed.fur==='long'?'long':breed.fur==='plush'?'plush':'short';}
   function visibleCats(s,room,focusId,limit=12){const cats=s.cats.filter(c=>c.location?.room===room);const focus=cats.find(c=>c.id===focusId);return (focus?[focus,...cats.filter(c=>c.id!==focusId)]:cats).slice(0,limit);}
   function irisPixel(pixel,target){const [r,g,b,a]=pixel;const iris=a>100&&((r>g*1.18&&g>b*1.3&&r-b>65)||(b>r*1.3&&b>g*1.08));if(!iris)return pixel;const shade=Math.max(r,g,b)/255;return target.map(v=>Math.round(v*shade)).concat(a);}
@@ -22,6 +23,6 @@
     const shade=.28+.72*max/255;
     return [Math.round(target[0]*shade),Math.round(target[1]*shade),Math.round(target[2]*shade),a];
   }
-  const api={frame,cell,roomCell,kind,visibleCats,irisPixel,cover,contain,furPixel};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HomeArt=api;
+  const api={frame,cell,roomCell,latestRoomArt,kind,visibleCats,irisPixel,cover,contain,furPixel};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HomeArt=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
 

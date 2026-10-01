@@ -7,3 +7,5 @@ test('购买扣款且不会重复购买',()=>{const s=G.newGame();assert.equal(G
 test('存档补齐与无效数据恢复',()=>{const s=G.newGame();s.owned=null;s.placed=['invalid'];s.memories=null;s.coins=-10;const n=G.normalize(s);assert.deepEqual(n.owned,['bowl','box']);assert.equal(n.coins,0);assert.deepEqual(n.placed,[]);assert.throws(()=>G.normalize({cats:[]}));});
 test('来访数量上限与装饰偏好',()=>{const s=G.newGame({},0);s.placed=['box'];for(let n=1;n<=10;n++)G.settle(s,n*3600000,()=>0);assert.equal(s.cats.filter(c=>c.status==='visitor').length,3);assert.equal(s.cats[1].favorite,'box');});
 test('频繁结算仍积累半小时礼物',()=>{const s=G.newGame({},0);for(let n=1;n<=60;n++)G.settle(s,n*30000,()=>0);assert.equal(s.gifts,3);});
+test('前八只小猫有不同毛色，亲密度解锁回忆',()=>{const s=G.newGame({},0);for(let n=0;n<7;n++)G.addVisitor(s,0,()=>0);assert.equal(new Set(s.cats.map(c=>c.coat)).size,8);for(let n=1;n<=5;n++)G.interact(s,s.cats[0].id,'pet',n*60001);assert.ok(s.memories.some(m=>m.text.includes('解锁亲密回忆')));});
+

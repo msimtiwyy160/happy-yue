@@ -1,0 +1,9 @@
+const test=require('node:test');const assert=require('node:assert/strict');const G=require('./game.js');
+test('初始猫自定义与安全名字',()=>{const s=G.newGame({name:'  团子  ',coat:'gray',accessory:'bow'},100);assert.equal(s.cats[0].name,'团子');assert.equal(s.cats[0].coat,'gray');assert.equal(s.cats[0].status,'starter');});
+test('奖励最多结算12小时，时间倒退没有负奖励',()=>{const s=G.newGame({},100);assert.equal(G.settle(s,100+24*3600000,()=>0).gifts,72);assert.equal(G.settle(s,0).gifts,0);});
+test('来访猫信任与收养不重复',()=>{const s=G.newGame({},100);const c=G.addVisitor(s,100,()=>0);assert.equal(G.adopt(s,c.id,'团子'),false);for(let n=0;n<4;n++)assert.equal(G.interact(s,c.id,'feed',100000+n*60001).ok,true);assert.equal(c.trust,100);assert.equal(G.adopt(s,c.id,'新名字'),true);assert.equal(G.adopt(s,c.id,'重复'),false);assert.equal(c.name,'新名字');});
+test('连续点击不会刷奖励',()=>{const s=G.newGame({},100);const c=s.cats[0];G.interact(s,c.id,'pet',100000);const coins=s.coins;assert.equal(G.interact(s,c.id,'feed',100001).ok,false);assert.equal(s.coins,coins);});
+test('购买扣款且不会重复购买',()=>{const s=G.newGame();assert.equal(G.buy(s,'mat'),true);assert.equal(s.coins,20);assert.equal(G.buy(s,'mat'),false);assert.equal(G.buy(s,'house'),false);});
+test('存档补齐与无效数据恢复',()=>{const s=G.newGame();s.owned=null;s.placed=['invalid'];s.memories=null;s.coins=-10;const n=G.normalize(s);assert.deepEqual(n.owned,['bowl','box']);assert.equal(n.coins,0);assert.deepEqual(n.placed,[]);assert.throws(()=>G.normalize({cats:[]}));});
+test('来访数量上限与装饰偏好',()=>{const s=G.newGame({},0);s.placed=['box'];for(let n=1;n<=10;n++)G.settle(s,n*3600000,()=>0);assert.equal(s.cats.filter(c=>c.status==='visitor').length,3);assert.equal(s.cats[1].favorite,'box');});
+test('频繁结算仍积累半小时礼物',()=>{const s=G.newGame({},0);for(let n=1;n<=60;n++)G.settle(s,n*30000,()=>0);assert.equal(s.gifts,3);});

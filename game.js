@@ -9,8 +9,29 @@
     {id:'white',name:'白色',color:'#f9f5ea',dark:'#cec6b5',breed:'长毛家猫'},
     {id:'gray',name:'蓝灰',color:'#9ba9b1',dark:'#697c8b',breed:'英国短毛猫'},
     {id:'calico',name:'三花',color:'#f6eddb',dark:'#bd854e',breed:'中华田园猫'},
-    {id:'tuxedo',name:'奶牛',color:'#f7f0df',dark:'#51545a',breed:'短毛家猫'}
+    {id:'tuxedo',name:'奶牛',color:'#f7f0df',dark:'#51545a',breed:'短毛家猫'},
+    {id:'silver',name:'银白',color:'#d6d9d8',dark:'#79838b',breed:'美国短毛猫'},
+    {id:'golden',name:'金渐层',color:'#e6c689',dark:'#b38c4c',breed:'英国短毛猫'},
+    {id:'chocolate',name:'巧克力',color:'#aa8370',dark:'#62483f',breed:'暹罗猫'},
+    {id:'lilac',name:'丁香灰',color:'#b9afbe',dark:'#827488',breed:'英国短毛猫'},
+    {id:'seal',name:'海豹奶白',color:'#efe1ca',dark:'#64534b',breed:'布偶猫'},
+    {id:'ginger',name:'红棕',color:'#cd8a66',dark:'#874c36',breed:'孟加拉猫'}
   ];
+  const breeds=[
+    {id:'domestic',name:'中华田园猫',fur:'short',shape:'balanced',eyes:'#969552'},
+    {id:'british',name:'英国短毛猫',fur:'plush',shape:'round',eyes:'#bd9750'},
+    {id:'american',name:'美国短毛猫',fur:'short',shape:'round',eyes:'#8b9a6e'},
+    {id:'ragdoll',name:'布偶猫',fur:'long',shape:'fluffy',eyes:'#76accc'},
+    {id:'siamese',name:'暹罗猫',fur:'short',shape:'slender',eyes:'#73b1cf'},
+    {id:'persian',name:'波斯猫',fur:'long',shape:'round',eyes:'#b49756'},
+    {id:'maine',name:'缅因猫',fur:'long',shape:'large',eyes:'#93ab73'},
+    {id:'bengal',name:'孟加拉猫',fur:'short',shape:'slender',eyes:'#97aa63'},
+    {id:'norwegian',name:'挪威森林猫',fur:'long',shape:'fluffy',eyes:'#8dac86'},
+    {id:'russian',name:'俄罗斯蓝猫',fur:'plush',shape:'slender',eyes:'#83ab76'}
+  ];
+  const patterns=[{id:'stripe',name:'虎斑条纹'},{id:'solid',name:'纯色'},{id:'patch',name:'小斑块'},{id:'point',name:'重点色'},{id:'spotted',name:'小圆斑'},{id:'rosette',name:'豹纹'},{id:'tortoise',name:'玳瑁'},{id:'bicolor',name:'双色白袜'}];
+  function breedFor(c){return breeds.find(b=>b.id===c.breedId)||breeds.find(b=>b.name===c.breed)||breeds.find(b=>b.name===coats.find(x=>x.id===c.coat)?.breed)||breeds[0];}
+  function displayName(c){return c.status==='visitor'?'流浪小猫':safeName(c.name)||'小猫';}
   const items = [
     {id:'bowl',name:'小小食盆',emoji:'🥣',price:0,tag:'food',desc:'一碗温暖的饭，等一个新朋友。',x:21,y:72},
     {id:'box',name:'旧纸箱',emoji:'📦',price:0,tag:'box',desc:'猫咪心里的豪华小别墅。',x:64,y:70},
@@ -27,7 +48,7 @@
   ];
   const personalities=['亲人','好奇','慵懒','贪吃','害羞'];
   const safeName=n=>typeof n==='string'?n.trim().slice(0,16):'';
-  const roomNames={yard:'小院',bedroom:'卧室',kitchen:'厨房',catroom:'猫窝房'};
+  const roomNames={yard:'小院',balcony:'花阳台',living:'暖客厅',bedroom:'卧室',kitchen:'厨房',catroom:'猫窝房'};
   function ensureLocation(c,now=Date.now(),rng=Math.random){
     const old=c.location||{};
     c.location={room:c.status==='visitor'?'yard':roomNames[old.room]?old.room:'yard',x:Number.isFinite(old.x)?Math.max(.12,Math.min(.88,old.x)):.2+rng()*.6,y:Number.isFinite(old.y)?Math.max(.6,Math.min(.8,old.y)):.66+rng()*.08,changedAt:Number.isFinite(old.changedAt)?old.changedAt:now,nextMove:Number.isFinite(old.nextMove)?old.nextMove:now+90000+rng()*90000};
@@ -44,19 +65,20 @@
     }return moved;
   }
   function catsInRoom(s,room){return s.cats.filter(c=>c.location?.room===room);}
-  function cat(coat='orange',name='小橘',status='visitor',pattern='stripe',accessory='none') {
+  function cat(coat='orange',name='',status='visitor',pattern='stripe',accessory='none',breedId) {
     const c=coats.find(c=>c.id===coat)||coats[0];
-    return {id:'cat-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),name:safeName(name)||'小猫',coat:c.id,breed:c.breed,pattern,accessory,status,trust:status==='visitor'?10:100,affection:0,personality:personalities[Math.floor(Math.random()*5)],favorite:items[Math.floor(Math.random()*items.length)].tag,lastInteraction:0};
+    const b=breedFor({breedId,coat:c.id});
+    return {id:'cat-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),name:status==='visitor'?'':safeName(name)||'小猫',coat:c.id,breedId:b.id,breed:b.name,pattern,accessory,status,trust:status==='visitor'?10:100,affection:0,personality:personalities[Math.floor(Math.random()*5)],favorite:items[Math.floor(Math.random()*items.length)].tag,lastInteraction:0};
   }
   function newGame(options={},now=Date.now()) {
-    const starter=cat(options.coat,safeName(options.name)||'小橘','starter',options.pattern||'stripe',options.accessory||'none');ensureLocation(starter,now);
+    const starter=cat(options.coat,safeName(options.name)||'小橘','starter',options.pattern||'stripe',options.accessory||'none',options.breedId);ensureLocation(starter,now);
     return {version:1,lastSeen:now,coins:45,gifts:0,cats:[starter],owned:['bowl','box'],placed:['bowl','box'],memories:[{text:'把第一只小猫接回了家。小院的故事，从这里开始。',at:now}],nextVisitor:now+10*60000};
   }
   function memory(s,text,now=Date.now()) {s.memories.unshift({text,at:now});s.memories=s.memories.slice(0,100);}
   function normalize(raw,now=Date.now()) {
     if(!raw||raw.version!==1||!Array.isArray(raw.cats)||!raw.cats.length) throw Error('无法识别的存档');
     const s={...raw};
-    s.cats=raw.cats.filter(c=>c&&typeof c.id==='string').slice(0,100).map(c=>({...c,name:safeName(c.name)||'小猫',coat:coats.some(x=>x.id===c.coat)?c.coat:'orange',pattern:['stripe','solid','patch'].includes(c.pattern)?c.pattern:'solid',accessory:['none','scarf','bow'].includes(c.accessory)?c.accessory:'none',status:['starter','resident','visitor'].includes(c.status)?c.status:'visitor',trust:Math.max(0,Math.min(100,Number(c.trust)||0)),affection:Math.max(0,Number(c.affection)||0),lastInteraction:Number(c.lastInteraction)||0}));
+    s.cats=raw.cats.filter(c=>c&&typeof c.id==='string').slice(0,100).map(c=>{const status=['starter','resident','visitor'].includes(c.status)?c.status:'visitor',b=breedFor(c);return {...c,name:status==='visitor'?'':safeName(c.name)||'小猫',breedId:b.id,breed:b.name,coat:coats.some(x=>x.id===c.coat)?c.coat:'orange',pattern:patterns.some(p=>p.id===c.pattern)?c.pattern:'solid',accessory:['none','scarf','bow'].includes(c.accessory)?c.accessory:'none',status,trust:Math.max(0,Math.min(100,Number(c.trust)||0)),affection:Math.max(0,Number(c.affection)||0),lastInteraction:Number(c.lastInteraction)||0};});
     if(!s.cats.length) throw Error('存档没有猫咪');
     s.cats=s.cats.filter((c,i,all)=>all.findIndex(x=>x.id===c.id)===i);s.cats.forEach(c=>ensureLocation(c,now));
     s.coins=Math.max(0,Number(s.coins)||0);s.gifts=Math.max(0,Number(s.gifts)||0);
@@ -69,14 +91,15 @@
   }
   function addVisitor(s,now,rng=Math.random) {
     const tags=s.placed.map(id=>items.find(i=>i.id===id).tag);
-    const c=cat(coats[Math.floor(rng()*coats.length)%coats.length].id,['栗子','芝麻','奶糖','团子','豆包','糯米','布丁','小满'][Math.floor(rng()*8)%8]);
-    c.pattern=['stripe','solid','patch'][Math.floor(rng()*3)%3];
+    const b=breeds[Math.floor(rng()*breeds.length)%breeds.length];
+    const c=cat(coats[Math.floor(rng()*coats.length)%coats.length].id,'','visitor','solid','none',b.id);
+    c.pattern=patterns[Math.floor(rng()*patterns.length)%patterns.length].id;
     const unused=coats.filter(coat=>!s.cats.some(existing=>existing.coat===coat.id));
-    if(unused.length){const coat=unused[Math.floor(rng()*unused.length)%unused.length];c.coat=coat.id;c.breed=coat.breed;}
-    else {const patterns=['solid','stripe','patch'];for(const coat of coats){const free=patterns.find(p=>!s.cats.some(existing=>existing.coat===coat.id&&existing.pattern===p));if(free){c.coat=coat.id;c.breed=coat.breed;c.pattern=free;break;}}}
+    if(unused.length){const coat=unused[Math.floor(rng()*unused.length)%unused.length];c.coat=coat.id;}
+    else {for(const coat of coats){const free=patterns.find(p=>!s.cats.some(existing=>existing.coat===coat.id&&existing.pattern===p.id));if(free){c.coat=coat.id;c.pattern=free.id;break;}}}
     c.favorite=tags[Math.floor(rng()*tags.length)]||'food';
     ensureLocation(c,now,rng);
-    s.cats.push(c);memory(s,`一只${coats.find(x=>x.id===c.coat).name}小猫悄悄来到小院，暂时叫它「${c.name}」吧。`,now);return c;
+    s.cats.push(c);memory(s,`一只${coats.find(x=>x.id===c.coat).name}的流浪小猫悄悄来到小院。等它愿意留下，再给它一个名字吧。`,now);return c;
   }
   function settle(s,now=Date.now(),rng=Math.random) {
     const elapsed=Math.min(12*HOUR,Math.max(0,now-s.lastSeen));
@@ -92,13 +115,14 @@
     const c=s.cats.find(c=>c.id===id);if(!c)return {ok:false,text:'这只小猫还没来到院子。'};
     if(now-c.lastInteraction<60000&&c.lastInteraction)return {ok:false,text:'它还在回味刚才的陪伴，过一小会再来吧。'};
     c.lastInteraction=now;c.affection+=5;if(c.status==='visitor')c.trust=Math.min(100,c.trust+(action==='feed'?25:20));
-    s.coins+=2;memory(s,`${c.name}${action==='feed'?'吃完饭，满意地舔了舔小爪子。':'蹭了蹭你的手，发出轻轻的呼噜声。'}`,now);
-    if(c.affection%25===0)memory(s,`解锁亲密回忆：${c.name}${c.affection===25?'第一次主动把小脑袋靠在了你的手心。':c.affection===50?'认得你的脚步声，跑过来迎接你。':'在你的陪伴下睡着了，连小胡须都在做梦。'}`,now);
+    const label=c.status==='visitor'?'这只流浪小猫':displayName(c);
+    s.coins+=2;memory(s,`${label}${action==='feed'?'吃完饭，满意地舔了舔小爪子。':'蹭了蹭你的手，发出轻轻的呼噜声。'}`,now);
+    if(c.affection%25===0)memory(s,`解锁亲密回忆：${label}${c.affection===25?'第一次主动把小脑袋靠在了你的手心。':c.affection===50?'认得你的脚步声，跑过来迎接你。':'在你的陪伴下睡着了，连小胡须都在做梦。'}`,now);
     return {ok:true,text:c.status==='visitor'&&c.trust===100?'它已经信任你了，可以邀请它留下！':'收获了一点点亲近，猫爪印 +2'};
   }
-  function adopt(s,id,name,now=Date.now()) {const c=s.cats.find(c=>c.id===id);if(!c||c.status!=='visitor'||c.trust<100)return false;c.name=safeName(name)||c.name;c.status='resident';memory(s,`「${c.name}」成为了小院的一员。从今天起，这里也是它的家。`,now);return true;}
+  function adopt(s,id,name,now=Date.now()) {const c=s.cats.find(c=>c.id===id),named=safeName(name);if(!c||c.status!=='visitor'||c.trust<100||!named)return false;c.name=named;c.status='resident';memory(s,`「${c.name}」成为了小院的一员。从今天起，这里也是它的家。`,now);return true;}
   function buy(s,id) {const item=items.find(i=>i.id===id);if(!item||s.owned.includes(id)||s.coins<item.price)return false;s.coins-=item.price;s.owned.push(id);s.placed.push(id);memory(s,`为小院添了${item.name}，猫咪们围过来好奇地闻了闻。`);return true;}
-  const api={coats,items,safeName,cat,newGame,normalize,settle,interact,adopt,buy,memory,addVisitor,roomNames,ensureLocation,moveCat,wanderLocations,catsInRoom};
+  const api={coats,breeds,patterns,breedFor,displayName,items,safeName,cat,newGame,normalize,settle,interact,adopt,buy,memory,addVisitor,roomNames,ensureLocation,moveCat,wanderLocations,catsInRoom};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CatGame=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
 

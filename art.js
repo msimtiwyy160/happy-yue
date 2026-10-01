@@ -11,7 +11,11 @@
   }
   function cell(width,height,index,columns=4,rows=4){const i=loop(index,columns*rows);return {x:i%columns*width/columns,y:Math.floor(i/columns)*height/rows,w:width/columns,h:height/rows};}
   function roomCell(width,height,room){return cell(width,height,({yard:0,bedroom:1,kitchen:2,catroom:3})[room]??0,2,2);}
+  const furnitureOrder=['bowl','box','mat','plant','ball','climb','light','flower','fish','bench','house','tea'];
+  function furnitureCell(width,height,id){const index=furnitureOrder.indexOf(id);return index<0?null:cell(width,height,index,3,4);}
   function latestRoomArt(artwork,room){return room==='balcony'||room==='living'?(artwork[room]||null):(artwork.rooms||null);}
+  function catDisplaySize(breed,viewportWidth){const base=Math.max(76,Math.min(156,viewportWidth*.115));const shape=breed?.shape;return Math.round(base*(shape==='large'?1.08:shape==='slender'?.92:1));}
+  function separatePositions(points,minimumDistance,bounds){const out=points.map(p=>({x:Math.max(bounds.minX,Math.min(bounds.maxX,p.x)),y:Math.max(bounds.minY,Math.min(bounds.maxY,p.y))}));for(let pass=0;pass<24;pass++)for(let i=0;i<out.length;i++)for(let j=i+1;j<out.length;j++){const a=out[i],b=out[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||.001;if(d>=minimumDistance)continue;const angle=d<.01?(i*2.399+j*.71):Math.atan2(dy,dx),push=(minimumDistance-d)/2;const ux=Math.cos(angle),uy=Math.sin(angle);a.x=Math.max(bounds.minX,Math.min(bounds.maxX,a.x-ux*push));a.y=Math.max(bounds.minY,Math.min(bounds.maxY,a.y-uy*push));b.x=Math.max(bounds.minX,Math.min(bounds.maxX,b.x+ux*push));b.y=Math.max(bounds.minY,Math.min(bounds.maxY,b.y+uy*push));}return out;}
   function kind(breed){return breed.fur==='long'?'long':breed.fur==='plush'?'plush':'short';}
   function visibleCats(s,room,focusId,limit=12){const cats=s.cats.filter(c=>c.location?.room===room);const focus=cats.find(c=>c.id===focusId);return (focus?[focus,...cats.filter(c=>c.id!==focusId)]:cats).slice(0,limit);}
   function irisPixel(pixel,target){const [r,g,b,a]=pixel;const iris=a>100&&((r>g*1.18&&g>b*1.3&&r-b>65)||(b>r*1.3&&b>g*1.08));if(!iris)return pixel;const shade=Math.max(r,g,b)/255;return target.map(v=>Math.round(v*shade)).concat(a);}
@@ -23,6 +27,6 @@
     const shade=.28+.72*max/255;
     return [Math.round(target[0]*shade),Math.round(target[1]*shade),Math.round(target[2]*shade),a];
   }
-  const api={frame,cell,roomCell,latestRoomArt,kind,visibleCats,irisPixel,cover,contain,furPixel};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HomeArt=api;
+  const api={frame,cell,roomCell,furnitureCell,latestRoomArt,catDisplaySize,separatePositions,kind,visibleCats,irisPixel,cover,contain,furPixel};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HomeArt=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
 

@@ -52,6 +52,9 @@
     const tags=s.placed.map(id=>items.find(i=>i.id===id).tag);
     const c=cat(coats[Math.floor(rng()*coats.length)%coats.length].id,['栗子','芝麻','奶糖','团子','豆包','糯米','布丁','小满'][Math.floor(rng()*8)%8]);
     c.pattern=['stripe','solid','patch'][Math.floor(rng()*3)%3];
+    const unused=coats.filter(coat=>!s.cats.some(existing=>existing.coat===coat.id));
+    if(unused.length){const coat=unused[Math.floor(rng()*unused.length)%unused.length];c.coat=coat.id;c.breed=coat.breed;}
+    else {const patterns=['solid','stripe','patch'];for(const coat of coats){const free=patterns.find(p=>!s.cats.some(existing=>existing.coat===coat.id&&existing.pattern===p));if(free){c.coat=coat.id;c.breed=coat.breed;c.pattern=free;break;}}}
     c.favorite=tags[Math.floor(rng()*tags.length)]||'food';
     s.cats.push(c);memory(s,`一只${coats.find(x=>x.id===c.coat).name}小猫悄悄来到小院，暂时叫它「${c.name}」吧。`,now);return c;
   }
@@ -70,6 +73,7 @@
     if(now-c.lastInteraction<60000&&c.lastInteraction)return {ok:false,text:'它还在回味刚才的陪伴，过一小会再来吧。'};
     c.lastInteraction=now;c.affection+=5;if(c.status==='visitor')c.trust=Math.min(100,c.trust+(action==='feed'?25:20));
     s.coins+=2;memory(s,`${c.name}${action==='feed'?'吃完饭，满意地舔了舔小爪子。':'蹭了蹭你的手，发出轻轻的呼噜声。'}`,now);
+    if(c.affection%25===0)memory(s,`解锁亲密回忆：${c.name}${c.affection===25?'第一次主动把小脑袋靠在了你的手心。':c.affection===50?'认得你的脚步声，跑过来迎接你。':'在你的陪伴下睡着了，连小胡须都在做梦。'}`,now);
     return {ok:true,text:c.status==='visitor'&&c.trust===100?'它已经信任你了，可以邀请它留下！':'收获了一点点亲近，猫爪印 +2'};
   }
   function adopt(s,id,name,now=Date.now()) {const c=s.cats.find(c=>c.id===id);if(!c||c.status!=='visitor'||c.trust<100)return false;c.name=safeName(name)||c.name;c.status='resident';memory(s,`「${c.name}」成为了小院的一员。从今天起，这里也是它的家。`,now);return true;}
@@ -77,3 +81,4 @@
   const api={coats,items,safeName,cat,newGame,normalize,settle,interact,adopt,buy,memory,addVisitor};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CatGame=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
+

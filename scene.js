@@ -6,7 +6,7 @@
  let state=null,room='yard',W=1200,H=820,scale=1,actors=[],last=0,time=0,hotspots=[],effects=[],backdrop=null,backdropKey='',backdropHotspots=[],focusId=null;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const artwork={},spriteCache=new Map(),portraitCache=new Map();let artRevision=0;
- const artSources={rooms:'assets/rooms-v1.webp',balcony:'assets/balcony-v1.webp',living:'assets/living-v1.webp',short:'assets/short-v1.webp',long:'assets/long-v1.webp',plush:'assets/plush-v1.webp',furniture:'assets/furniture-v2.png'};
+ const artSources={rooms:'assets/rooms-v1.webp',balcony:'assets/balcony-v1.webp',living:'assets/living-v1.webp',short:'assets/short-v2.png',long:'assets/long-v2.png',plush:'assets/plush-v2.png',furniture:'assets/furniture-v3.png'};
  for(const [name,src] of Object.entries(artSources)){const img=new Image();img.decoding='async';img.onload=()=>{artwork[name]=img;artRevision++;portraitCache.clear();backdropKey='';document.dispatchEvent(new CustomEvent('artready'));};img.onerror=()=>{document.dispatchEvent(new CustomEvent('arterror',{detail:name}));};img.src=src;}
  function spriteFrame(c,index){
   const breed=CatGame.breedFor(c),kind=HomeArt.kind(breed),img=artwork[kind];if(!img)return null;

@@ -6,7 +6,7 @@
  let state=null,room='yard',W=1200,H=820,scale=1,actors=[],last=0,time=0,hotspots=[],effects=[],backdrop=null,backdropKey='',backdropHotspots=[],focusId=null;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const artwork={},spriteCache=new Map(),portraitCache=new Map();let artRevision=0;
- const artSources={rooms:'assets/rooms-v1.webp',balcony:'assets/balcony-v1.webp',living:'assets/living-v1.webp',short:'assets/short-v2.png',long:'assets/long-v2.png',plush:'assets/plush-v2.png',furniture:'assets/furniture-v3.png'};
+ const artSources={rooms:'assets/rooms-v1.webp?v=4',balcony:'assets/balcony-v1.webp?v=4',living:'assets/living-v1.webp?v=4',short:'assets/short-v2.png?v=4',long:'assets/long-v2.png?v=4',plush:'assets/plush-v2.png?v=4',furniture:'assets/furniture-v3.png?v=4'};
  for(const [name,src] of Object.entries(artSources)){const img=new Image();img.decoding='async';img.onload=()=>{artwork[name]=img;artRevision++;portraitCache.clear();backdropKey='';document.dispatchEvent(new CustomEvent('artready'));};img.onerror=()=>{document.dispatchEvent(new CustomEvent('arterror',{detail:name}));};img.src=src;}
  function spriteFrame(c,index){
   const breed=CatGame.breedFor(c),kind=HomeArt.kind(breed),img=artwork[kind];if(!img)return null;
@@ -18,7 +18,7 @@
   // Pattern accents are painted over the shaded fur, not over the ground or UI.
   if(!original){p.save();p.globalCompositeOperation='source-atop';const sleeping=index>=12&&index<=13,seated=index>=10,cx=sleeping?127:seated?119:96,cy=sleeping?176:seated?153:145,rx=sleeping?67:seated?37:43,ry=sleeping?29:seated?48:28;p.beginPath();p.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);p.clip();p.fillStyle=coat.dark;p.strokeStyle=coat.dark;p.globalAlpha=.58;
    if(c.pattern==='stripe')for(let n=0;n<4;n++){const x=cx-rx+15+n*21;p.beginPath();p.moveTo(x,cy-ry);p.quadraticCurveTo(x+12,cy,x+4,cy+ry);p.lineWidth=7;p.stroke();}
-   if(['spotted','rosette'].includes(c.pattern))for(let n=0;n<9;n++){const x=cx+Math.sin(n*2.1)*rx*.78,y=cy+Math.cos(n*1.7)*ry*.7;p.beginPath();p.ellipse(x,y,c.pattern==='rosette'?7:4.5,5,0,0,Math.PI*2);p.lineWidth=3;if(c.pattern==='rosette')p.stroke();else p.fill();}
+   if(['spotted','rosette'].includes(c.pattern))for(let n=0;n<8;n++){const x=cx+Math.sin(n*2.1)*rx*.76,y=cy+Math.cos(n*1.7)*ry*.68,angle=n*.83;p.save();p.translate(x,y);p.rotate(angle);p.beginPath();p.ellipse(0,0,c.pattern==='rosette'?5:3.2,c.pattern==='rosette'?3.2:2.1,0,0,Math.PI*2);p.lineWidth=2;if(c.pattern==='rosette')p.stroke();else p.fill();p.restore();}
    if(['patch','tortoise'].includes(c.pattern))for(let n=0;n<3;n++){p.fillStyle=c.pattern==='tortoise'?['#5b4a44','#bd794b','#eee4cd'][n]:coat.dark;p.beginPath();p.ellipse(cx-25+n*24,cy-12+(n%2)*23,18,22,0,0,Math.PI*2);p.fill();}
    if(c.pattern==='bicolor'){p.fillStyle='#fff7ea';p.globalAlpha=.85;p.fillRect(cx-rx,cy+5,rx*2,ry);}
    p.restore();

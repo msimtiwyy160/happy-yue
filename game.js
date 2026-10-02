@@ -9,7 +9,7 @@
     {id:'white',name:'白色',color:'#f9f5ea',dark:'#cec6b5',breed:'长毛家猫'},
     {id:'gray',name:'蓝灰',color:'#9ba9b1',dark:'#697c8b',breed:'英国短毛猫'},
     {id:'calico',name:'三花',color:'#f6eddb',dark:'#bd854e',breed:'中华田园猫'},
-    {id:'tuxedo',name:'奶牛',color:'#f7f0df',dark:'#51545a',breed:'短毛家猫'},
+    {id:'tuxedo',name:'奶牛',color:'#51545a',dark:'#34373c',swatch:'linear-gradient(135deg,#51545a 50%,#f7f0df 50%)',breed:'短毛家猫'},
     {id:'silver',name:'银白',color:'#d6d9d8',dark:'#79838b',breed:'美国短毛猫'},
     {id:'golden',name:'金渐层',color:'#e6c689',dark:'#b38c4c',breed:'英国短毛猫'},
     {id:'chocolate',name:'巧克力',color:'#aa8370',dark:'#62483f',breed:'暹罗猫'},
@@ -31,8 +31,12 @@
   ];
   const patterns=[{id:'stripe',name:'虎斑条纹'},{id:'solid',name:'纯色'},{id:'patch',name:'小斑块'},{id:'point',name:'重点色'},{id:'spotted',name:'小圆斑'},{id:'rosette',name:'豹纹'},{id:'tortoise',name:'玳瑁'},{id:'bicolor',name:'双色白袜'}];
   function breedFor(c){return breeds.find(b=>b.id===c.breedId)||breeds.find(b=>b.name===c.breed)||breeds.find(b=>b.name===coats.find(x=>x.id===c.coat)?.breed)||breeds[0];}
+  const calicoPattern={id:'calico',name:'三色斑块'};
+  function availablePatterns(coat){return coat==='calico'?[calicoPattern]:coat==='tuxedo'?patterns.filter(p=>p.id==='bicolor'):patterns;}
+  function resolvePattern(coat,requested){const choices=availablePatterns(coat);return choices.some(p=>p.id===requested)?requested:(coat==='calico'?'calico':coat==='tuxedo'?'bicolor':'solid');}
+  function appearanceLabel(c){const pattern=resolvePattern(c.coat,c.pattern),coat=coats.find(x=>x.id===c.coat)?.name||'橘色';if(c.coat==='calico')return '三花 · 三色斑块';if(c.coat==='tuxedo')return '奶牛 · 黑白双色';if(pattern==='tortoise')return `${c.coat==='silver'?'银灰':coat}底玳瑁 · 双色斑块`;return `${coat} · ${patterns.find(p=>p.id===pattern).name}`;}
   function displayName(c){return c.status==='visitor'?'流浪小猫':safeName(c.name)||'小猫';}
-  function visitorDescription(c){if(c.status!=='visitor')return displayName(c);const coat=coats.find(x=>x.id===c.coat)?.name||'好奇',pattern=patterns.find(x=>x.id===c.pattern)?.name||'纯色';return `${coat} · ${pattern}的访客`;}
+  function visitorDescription(c){return c.status==='visitor'?`${appearanceLabel(c)}的访客`:displayName(c);}
   function nextGoal(s){
     if(s.cats.some(c=>c.status==='resident'))return null;
     const visitor=s.cats.find(c=>c.status==='visitor');
@@ -87,7 +91,7 @@
   function cat(coat='orange',name='',status='visitor',pattern='stripe',accessory='none',breedId) {
     const c=coats.find(c=>c.id===coat)||coats[0];
     const b=breedFor({breedId,coat:c.id});
-    return {id:'cat-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),name:status==='visitor'?'':safeName(name)||'小猫',coat:c.id,breedId:b.id,breed:b.name,pattern,accessory,status,trust:status==='visitor'?10:100,affection:0,personality:personalities[Math.floor(Math.random()*5)],favorite:items[Math.floor(Math.random()*items.length)].tag,lastInteraction:0};
+    return {id:'cat-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),name:status==='visitor'?'':safeName(name)||'小猫',coat:c.id,breedId:b.id,breed:b.name,pattern:resolvePattern(c.id,pattern),accessory,status,trust:status==='visitor'?10:100,affection:0,personality:personalities[Math.floor(Math.random()*5)],favorite:items[Math.floor(Math.random()*items.length)].tag,lastInteraction:0};
   }
   function newGame(options={},now=Date.now()) {
     const starter=cat(options.coat,safeName(options.name)||'小橘','starter',options.pattern||'stripe',options.accessory||'none',options.breedId);ensureLocation(starter,now);
@@ -99,7 +103,7 @@
     const s={...raw};
     s.cats=raw.cats.filter(c=>c&&typeof c.id==='string').slice(0,100).map(c=>{const status=['starter','resident','visitor'].includes(c.status)?c.status:'visitor',b=breedFor(c);return {...c,name:status==='visitor'?'':safeName(c.name)||'小猫',breedId:b.id,breed:b.name,coat:coats.some(x=>x.id===c.coat)?c.coat:'orange',pattern:patterns.some(p=>p.id===c.pattern)?c.pattern:'solid',accessory:['none','scarf','bow'].includes(c.accessory)?c.accessory:'none',status,trust:Math.max(0,Math.min(100,Number(c.trust)||0)),affection:Math.max(0,Number(c.affection)||0),lastInteraction:Number(c.lastInteraction)||0};});
     if(!s.cats.length) throw Error('存档没有猫咪');
-    s.cats=s.cats.filter((c,i,all)=>all.findIndex(x=>x.id===c.id)===i);s.cats.forEach(c=>ensureLocation(c,now));
+    s.cats=s.cats.filter((c,i,all)=>all.findIndex(x=>x.id===c.id)===i);s.cats.forEach(c=>{c.pattern=resolvePattern(c.coat,c.pattern);ensureLocation(c,now);});
     s.coins=Math.max(0,Number(s.coins)||0);s.gifts=Math.max(0,Number(s.gifts)||0);
     s.lastSeen=Number.isFinite(s.lastSeen)?s.lastSeen:now;
     s.nextVisitor=Number.isFinite(s.nextVisitor)?s.nextVisitor:now+10*60000;
@@ -115,7 +119,8 @@
     c.pattern=patterns[Math.floor(rng()*patterns.length)%patterns.length].id;
     const unused=coats.filter(coat=>!s.cats.some(existing=>existing.coat===coat.id));
     if(unused.length){const coat=unused[Math.floor(rng()*unused.length)%unused.length];c.coat=coat.id;}
-    else {for(const coat of coats){const free=patterns.find(p=>!s.cats.some(existing=>existing.coat===coat.id&&existing.pattern===p.id));if(free){c.coat=coat.id;c.pattern=free.id;break;}}}
+    else {for(const coat of coats){const free=availablePatterns(coat.id).find(p=>!s.cats.some(existing=>existing.coat===coat.id&&existing.pattern===p.id));if(free){c.coat=coat.id;c.pattern=free.id;break;}}}
+    c.pattern=resolvePattern(c.coat,c.pattern);
     const totalWeight=weights.reduce((sum,[,weight])=>sum+weight,0);
     let pick=rng()*totalWeight;c.favorite='food';
     for(const [tag,weight] of weights){pick-=weight;if(pick<0){c.favorite=tag;break;}}
@@ -145,6 +150,6 @@
   }
   function adopt(s,id,name,now=Date.now()) {const c=s.cats.find(c=>c.id===id),named=safeName(name);if(!c||c.status!=='visitor'||c.trust<100||!named)return false;c.name=named;c.status='resident';memory(s,`「${c.name}」成为了小院的一员。从今天起，这里也是它的家。`,now);return true;}
   function buy(s,id) {const item=items.find(i=>i.id===id);if(!item||s.owned.includes(id)||s.coins<item.price)return false;s.coins-=item.price;s.owned.push(id);s.placed.push(id);memory(s,`为小院添了${item.name}，猫咪们围过来好奇地闻了闻。`);return true;}
-  const api={visitorDescription,nextGoal,coats,breeds,patterns,breedFor,displayName,items,itemEffect,safeName,cat,newGame,normalize,settle,interact,adopt,buy,memory,addVisitor,roomNames,ensureLocation,moveCat,wanderLocations,catsInRoom};
+  const api={availablePatterns,resolvePattern,appearanceLabel,visitorDescription,nextGoal,coats,breeds,patterns,breedFor,displayName,items,itemEffect,safeName,cat,newGame,normalize,settle,interact,adopt,buy,memory,addVisitor,roomNames,ensureLocation,moveCat,wanderLocations,catsInRoom};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CatGame=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

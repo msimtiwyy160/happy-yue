@@ -10,10 +10,10 @@
  for(const [name,src] of Object.entries(artSources)){const img=new Image();img.decoding='async';img.onload=()=>{artwork[name]=img;artRevision++;portraitCache.clear();backdropKey='';document.dispatchEvent(new CustomEvent('artready'));};img.onerror=()=>{document.dispatchEvent(new CustomEvent('arterror',{detail:name}));};img.src=src;}
  function spriteFrame(c,index){
   const breed=CatGame.breedFor(c),kind=HomeArt.kind(breed),img=artwork[kind];if(!img)return null;
-  const key=[kind,breed.id,c.coat,c.pattern,index].join(':');if(spriteCache.has(key)){const cached=spriteCache.get(key);spriteCache.delete(key);spriteCache.set(key,cached);return cached;}
+  const pattern=CatGame.resolvePattern(c.coat,c.pattern),key=[kind,breed.id,c.coat,pattern,index].join(':');if(spriteCache.has(key)){const cached=spriteCache.get(key);spriteCache.delete(key);spriteCache.set(key,cached);return cached;}
   const cell=HomeArt.cell(img.naturalWidth,img.naturalHeight,index),out=document.createElement('canvas');out.width=out.height=256;const p=out.getContext('2d',{willReadFrequently:true}),fit=HomeArt.contain(cell.w,cell.h,256,256);p.drawImage(img,cell.x,cell.y,cell.w,cell.h,fit.x,fit.y,fit.w,fit.h);
   const coat=CatGame.coats.find(x=>x.id===c.coat)||CatGame.coats[0];
-  const rgba=p.getImageData(0,0,256,256),rgb=color=>color.slice(1).match(/../g).map(x=>parseInt(x,16)),target=rgb(coat.color),dark=rgb(coat.dark),eyes=rgb(breed.eyes),paintFur=HomeArt.patternPainter(target,dark,c.pattern,index,kind);
+  const rgba=p.getImageData(0,0,256,256),rgb=color=>color.slice(1).match(/../g).map(x=>parseInt(x,16)),target=rgb(coat.color),dark=rgb(coat.dark),eyes=rgb(breed.eyes),paintFur=HomeArt.patternPainter(target,dark,pattern,index,kind);
   for(let i=0;i<rgba.data.length;i+=4){if(!rgba.data[i+3])continue;const raw=[rgba.data[i],rgba.data[i+1],rgba.data[i+2],rgba.data[i+3]],iris=HomeArt.irisPixel(raw,eyes),pixel=iris!==raw?iris:paintFur(raw,(i/4)%256,Math.floor(i/1024));rgba.data[i]=pixel[0];rgba.data[i+1]=pixel[1];rgba.data[i+2]=pixel[2];}
   p.putImageData(rgba,0,0);
   spriteCache.set(key,out);if(spriteCache.size>128)spriteCache.delete(spriteCache.keys().next().value);return out;

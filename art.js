@@ -55,6 +55,10 @@
     const blob=(u,v,cx,cy,rx,ry)=>{const du=(u-cx)/rx,dv=(v-cy)/ry,q=du*du+dv*dv+.13*Math.sin(u*17+v*9)+.09*Math.cos(v*21-u*5);return clamp((1-q)*4);};
     if(pattern==='stripe'){
       amount=Math.max(b.mask*stripe(b.u,b.v,[-.7,-.35,.12,.6]),f.mask*stripe(f.u,f.v,[-.38,-.08,.22])*clamp((-f.v-.18)*3),t.mask*clamp((.12-Math.abs(Math.sin(t.v*12+t.u*.8)))/.12))*.65;
+    }else if(pattern==='calico'){
+      const orange=Math.max(blob(b.u,b.v,-.35,-.45,.62,.73)*b.mask,blob(f.u,f.v,-.4,-.5,.6,.75)*f.mask);
+      const black=Math.max(blob(b.u,b.v,.55,.18,.57,.73)*b.mask,blob(f.u,f.v,.5,-.5,.45,.65)*f.mask,t.mask*.9);
+      amount=Math.max(orange,black)*.98;color=black>orange?[64,61,59]:dark;
     }else if(pattern==='patch'||pattern==='tortoise'){
       const one=blob(b.u,b.v,-.35,-.45,.62,.73)*b.mask,two=blob(f.u,f.v,-.25,-.55,.7,.8)*f.mask;
       amount=Math.max(one,two)*.85;

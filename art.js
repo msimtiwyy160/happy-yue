@@ -29,4 +29,3 @@
   }
   const api={frame,cell,roomCell,furnitureCell,latestRoomArt,catDisplaySize,separatePositions,kind,visibleCats,irisPixel,cover,contain,furPixel};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HomeArt=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
-

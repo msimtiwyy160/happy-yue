@@ -13,17 +13,9 @@
   const key=[kind,breed.id,c.coat,c.pattern,index].join(':');if(spriteCache.has(key)){const cached=spriteCache.get(key);spriteCache.delete(key);spriteCache.set(key,cached);return cached;}
   const cell=HomeArt.cell(img.naturalWidth,img.naturalHeight,index),out=document.createElement('canvas');out.width=out.height=256;const p=out.getContext('2d',{willReadFrequently:true}),fit=HomeArt.contain(cell.w,cell.h,256,256);p.drawImage(img,cell.x,cell.y,cell.w,cell.h,fit.x,fit.y,fit.w,fit.h);
   const coat=CatGame.coats.find(x=>x.id===c.coat)||CatGame.coats[0];
-  const original=false; // Atlases use neutral ivory fur; every saved coat is applied at runtime.
-  if(!original){const rgba=p.getImageData(0,0,256,256),target=coat.color.slice(1).match(/../g).map(x=>parseInt(x,16)),eyes=breed.eyes.slice(1).match(/../g).map(x=>parseInt(x,16));for(let i=0;i<rgba.data.length;i+=4){const raw=[rgba.data[i],rgba.data[i+1],rgba.data[i+2],rgba.data[i+3]],iris=HomeArt.irisPixel(raw,eyes),pixel=iris!==raw?iris:HomeArt.furPixel(raw,target);rgba.data[i]=pixel[0];rgba.data[i+1]=pixel[1];rgba.data[i+2]=pixel[2];}p.putImageData(rgba,0,0);}
-  // Pattern accents are painted over the shaded fur, not over the ground or UI.
-  if(!original){p.save();p.globalCompositeOperation='source-atop';const sleeping=index>=12&&index<=13,seated=index>=10,cx=sleeping?127:seated?119:96,cy=sleeping?176:seated?153:145,rx=sleeping?67:seated?37:43,ry=sleeping?29:seated?48:28;p.beginPath();p.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);p.clip();p.fillStyle=coat.dark;p.strokeStyle=coat.dark;p.globalAlpha=.58;
-   if(c.pattern==='stripe')for(let n=0;n<4;n++){const x=cx-rx+15+n*21;p.beginPath();p.moveTo(x,cy-ry);p.quadraticCurveTo(x+12,cy,x+4,cy+ry);p.lineWidth=7;p.stroke();}
-   if(['spotted','rosette'].includes(c.pattern))for(let n=0;n<8;n++){const x=cx+Math.sin(n*2.1)*rx*.76,y=cy+Math.cos(n*1.7)*ry*.68,angle=n*.83;p.save();p.translate(x,y);p.rotate(angle);p.beginPath();p.ellipse(0,0,c.pattern==='rosette'?5:3.2,c.pattern==='rosette'?3.2:2.1,0,0,Math.PI*2);p.lineWidth=2;if(c.pattern==='rosette')p.stroke();else p.fill();p.restore();}
-   if(['patch','tortoise'].includes(c.pattern))for(let n=0;n<3;n++){p.fillStyle=c.pattern==='tortoise'?['#5b4a44','#bd794b','#eee4cd'][n]:coat.dark;p.beginPath();p.ellipse(cx-25+n*24,cy-12+(n%2)*23,18,22,0,0,Math.PI*2);p.fill();}
-   if(c.pattern==='bicolor'){p.fillStyle='#fff7ea';p.globalAlpha=.85;p.fillRect(cx-rx,cy+5,rx*2,ry);}
-   p.restore();
-   if(c.pattern==='point'){p.save();p.globalCompositeOperation='source-atop';const seated=index>=10&&index!==12&&index!==13,sleeping=index===12||index===13;const points=sleeping?[[185,180,29],[61,171,25]]:seated?[[129,93,29],[105,204,18],[148,204,18]]:[[190,111,30],[49,95,22],[66,206,15],[162,206,15]];for(const [x,y,r] of points){const g=p.createRadialGradient(x,y,3,x,y,r);g.addColorStop(0,coat.dark+'d9');g.addColorStop(.6,coat.dark+'ad');g.addColorStop(1,coat.dark+'00');p.fillStyle=g;p.fillRect(x-r,y-r,r*2,r*2);}p.restore();}
-  }
+  const rgba=p.getImageData(0,0,256,256),rgb=color=>color.slice(1).match(/../g).map(x=>parseInt(x,16)),target=rgb(coat.color),dark=rgb(coat.dark),eyes=rgb(breed.eyes),paintFur=HomeArt.patternPainter(target,dark,c.pattern,index,kind);
+  for(let i=0;i<rgba.data.length;i+=4){if(!rgba.data[i+3])continue;const raw=[rgba.data[i],rgba.data[i+1],rgba.data[i+2],rgba.data[i+3]],iris=HomeArt.irisPixel(raw,eyes),pixel=iris!==raw?iris:paintFur(raw,(i/4)%256,Math.floor(i/1024));rgba.data[i]=pixel[0];rgba.data[i+1]=pixel[1];rgba.data[i+2]=pixel[2];}
+  p.putImageData(rgba,0,0);
   spriteCache.set(key,out);if(spriteCache.size>128)spriteCache.delete(spriteCache.keys().next().value);return out;
  }
  function drawSprite(a,t){
